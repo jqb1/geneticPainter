@@ -1,39 +1,37 @@
 import pygame
 import pygame.gfxdraw
-from random import randint
 
-width = 800
-height = 800
-screen = pygame.display.set_mode([width, height])
+from shape import Shape
 
-WHITE = (255, 255, 255)
-BLUE = (0, 0, 255)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-BLACK = (0, 0, 0)
-ORANGE_RED = (255, 69, 0)
-SNAKE_GREEN = (127, 255, 0)
+WIDTH = 800
+HEIGHT = 800
+screen = pygame.display.set_mode([WIDTH, HEIGHT])
+
+
+class Painting:
+    def __init__(self, shapes_number: int):
+        self.shapes_number = shapes_number
+
+    def draw(self):
+        for i in range(self.shapes_number):
+            shape = Shape(WIDTH, HEIGHT)
+            shape.set_init_vertices()
+            pygame.gfxdraw.filled_polygon(screen, shape.vertices, shape.color)
 
 
 def main():
     running = True
-    screen = pygame.display.set_mode([width, height])
-    screen.set_alpha(128)
-    for i in range(100):
-        pygame.gfxdraw.filled_polygon(screen,
-                                      [(randint(1, width), randint(1, height)), (randint(1, width), randint(1, height)),
-                                       (randint(1, width), randint(1, height))], rand_color())
+    screen = pygame.display.set_mode([WIDTH, HEIGHT])
+    print(pygame.display.get_surface().get_view())
 
+    Painting(200).draw()
     pygame.display.flip()
+
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
                 pygame.display.quit()
-
-
-def rand_color():
-    return randint(1, 255), randint(1, 255), randint(1, 255), 128
 
 
 if __name__ == "__main__":
