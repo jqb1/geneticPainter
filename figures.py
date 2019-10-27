@@ -5,6 +5,7 @@ import pygame
 import pygame.gfxdraw
 
 from shape import Shape
+import numpy as np
 
 
 class Painting:
@@ -28,12 +29,12 @@ def main():
 
     width, height = image.get_width(), image.get_height()
     screen = pygame.display.set_mode([width, height])
-    print(pygame.display.get_surface().get_view())
 
     surface = Painting(200, width, height).draw()
     screen.blit(surface, (0, 0))
     pygame.display.flip()
 
+    fitness(image, surface)
     running = True
     while running:
         for event in pygame.event.get():
@@ -42,8 +43,11 @@ def main():
                 pygame.display.quit()
 
 
-def fitness():
-    pass
+def fitness(image, surface):
+    array_surface = pygame.surfarray.array2d(surface)
+    array_image = pygame.surfarray.array2d(image)
+    # TODO :for every element in array count color diff and sum all elements
+    np.sum(np.absolute(array_surface - array_image))
 
 
 def read_image():
@@ -59,6 +63,7 @@ def read_image():
     image_path = parser.parse_args().file_path
     img = pygame.image.load(image_path)
     return img
+
 
 
 if __name__ == "__main__":
