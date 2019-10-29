@@ -44,10 +44,24 @@ def main():
 
 
 def fitness(image, surface):
-    array_surface = pygame.surfarray.array2d(surface)
-    array_image = pygame.surfarray.array2d(image)
+    array_surface = pygame.surfarray.array2d(surface).flatten()
+    array_image = pygame.surfarray.array2d(image).flatten()
+    for surface_pixel, image_pixel in zip(array_surface, array_image):
+        surface_r, surface_g, surface_b = rgb_from_int(surface_pixel)
+        imagee_r, image_g, image_b = rgb_from_int(surface_pixel)
+
+        # np.absolute(surface_pixel - image_pixel)
+        # R - R G - G B-B
+        pass
     # TODO :for every element in array count color diff and sum all elements
     np.sum(np.absolute(array_surface - array_image))
+
+
+def rgb_from_int(color_value):
+    blue = color_value & 255
+    green = (color_value >> 8) & 255
+    red = (color_value >> 16) & 255
+    return np.array([red, green, blue])
 
 
 def read_image():
@@ -63,7 +77,6 @@ def read_image():
     image_path = parser.parse_args().file_path
     img = pygame.image.load(image_path)
     return img
-
 
 
 if __name__ == "__main__":
