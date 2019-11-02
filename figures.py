@@ -6,6 +6,8 @@ import pygame.gfxdraw
 
 from shape import Shape
 import numpy as np
+import cv2
+import PIL
 
 
 class Painting:
@@ -27,7 +29,7 @@ class Painting:
 def main():
     image = read_image()
 
-    width, height = image.get_width(), image.get_height()
+    height, width = image.shape[:2]
     screen = pygame.display.set_mode([width, height])
 
     surface = Painting(200, width, height).draw()
@@ -44,17 +46,11 @@ def main():
 
 
 def fitness(image, surface):
-    array_surface = pygame.surfarray.array2d(surface).flatten()
-    array_image = pygame.surfarray.array2d(image).flatten()
-    for surface_pixel, image_pixel in zip(array_surface, array_image):
-        surface_r, surface_g, surface_b = rgb_from_int(surface_pixel)
-        imagee_r, image_g, image_b = rgb_from_int(surface_pixel)
-
-        # np.absolute(surface_pixel - image_pixel)
-        # R - R G - G B-B
-        pass
-    # TODO :for every element in array count color diff and sum all elements
-    np.sum(np.absolute(array_surface - array_image))
+    surface_array = pygame.surfarray.array3d(surface).transpose([1, 0, 2])
+    surface_img = cv2.cvtColor(surface_array, cv2.COLOR_RGB2BGR)
+    img_diff = cv2.subtract(image, surface_img)
+    b, g, r = cv2.split(img_diff)
+    return np.sum([b, g, r])
 
 
 def rgb_from_int(color_value):
@@ -75,7 +71,7 @@ def read_image():
                         help="input image file path")
 
     image_path = parser.parse_args().file_path
-    img = pygame.image.load(image_path)
+    img = cv2.imread(image_path)
     return img
 
 
