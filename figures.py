@@ -1,13 +1,14 @@
 import argparse
 import os
 
+import cv2
+import numpy as np
 import pygame
 import pygame.gfxdraw
 
 from shape import Shape
-import numpy as np
-import cv2
-import PIL
+
+population_size = 10
 
 
 class Painting:
@@ -32,12 +33,15 @@ def main():
     height, width = image.shape[:2]
     screen = pygame.display.set_mode([width, height])
 
-    surface = Painting(200, width, height).draw()
-    screen.blit(surface, (0, 0))
+    paintings = [Painting(100, width, height).draw() for _ in range(population_size)]
+    images_with_fitneses = [fitness(image, painting) for painting in paintings]
+    best_painting = sorted(images_with_fitneses, key=lambda k: k[0])[0]
+
+    screen.blit(best_painting[1], (0, 0))
     pygame.display.flip()
 
-    fitness(image, surface)
     running = True
+
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -45,12 +49,12 @@ def main():
                 pygame.display.quit()
 
 
-def fitness(image, surface):
-    surface_array = pygame.surfarray.array3d(surface).transpose([1, 0, 2])
-    surface_img = cv2.cvtColor(surface_array, cv2.COLOR_RGB2BGR)
-    img_diff = cv2.subtract(image, surface_img)
-    b, g, r = cv2.split(img_diff)
-    return np.sum([b, g, r])
+def fitness(image, painting_surface) -> tuple:
+    # transpose from (width, height) to (height, width) and change from RGB to BGR
+    painting_array = pygame.surfarray.array3d(painting_surface).transpose([1, 0, 2])
+    paiting_image = cv2.cvtColor(painting_array, cv2.COLOR_RGB2BGR)
+    diff = cv2.absdiff(paiting_image, image).sum()
+    return diff, painting_surface
 
 
 def rgb_from_int(color_value):
