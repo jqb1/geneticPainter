@@ -4,49 +4,56 @@ import os
 import cv2
 import numpy as np
 import pygame
-import pygame.gfxdraw
 
-from shape import Shape
+from painting import Painting
 
-population_size = 10
-
-
-class Painting:
-    def __init__(self, shapes_number: int, width: int, height: int):
-        self.shapes_number = shapes_number
-        self.width = width
-        self.height = height
-
-    def draw(self):
-        surface = pygame.Surface((self.width, self.height))
-        for i in range(self.shapes_number):
-            shape = Shape(self.width, self.height)
-            shape.set_init_vertices()
-            pygame.gfxdraw.filled_polygon(surface, shape.vertices, shape.color)
-
-        return surface
+POPULATION_SIZE = 10
 
 
 def main():
     image = read_image()
-
     height, width = image.shape[:2]
     screen = pygame.display.set_mode([width, height])
 
-    paintings = [Painting(100, width, height).draw() for _ in range(population_size)]
-    images_with_fitneses = [fitness(image, painting) for painting in paintings]
-    best_painting = sorted(images_with_fitneses, key=lambda k: k[0])[0]
-
-    screen.blit(best_painting[1], (0, 0))
+    new_generation = generate_initial_population(width, height, image)
+    screen.blit(new_generation[0][1], (0, 0))
     pygame.display.flip()
 
+    # ------------------
+    child = crossover(new_generation[0][2], new_generation[1][2])
+    fitness(image, child.draw())
+    # -------------------
     running = True
-
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
                 pygame.display.quit()
+
+
+def generate_new_population():
+    pass
+
+
+def crossover(parent1, parent2):
+    child = Painting(100, parent1.width, parent2.height)
+    child.shapes = parent1.shapes[:49] + parent2.shapes[50:99]
+    return child
+
+
+def mutation():
+    pass
+
+
+def generate_initial_population(width, height, image):
+    paintings = []
+    for _ in range(POPULATION_SIZE):
+        painting = Painting(100, width, height)
+        painting.create_init_shapes()
+        paintings.append(painting)
+
+    images_with_fitneses = [(*fitness(image, painting.draw()), painting) for painting in paintings]
+    return sorted(images_with_fitneses, key=lambda k: k[0])
 
 
 def fitness(image, painting_surface) -> tuple:
