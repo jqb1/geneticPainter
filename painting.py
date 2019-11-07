@@ -14,6 +14,7 @@ class Painting:
     def create_init_shapes(self):
         for i in range(self.shapes_number):
             shape = Shape(self.width, self.height)
+            shape.rand_color()
             shape.set_init_vertices()
             self.shapes.append(shape)
 
