@@ -21,6 +21,6 @@ class Painting:
     def draw(self):
         surface = pygame.Surface((self.width, self.height))
         for shape in self.shapes:
-            pygame.gfxdraw.filled_polygon(surface, shape.vertices, shape.color)
+            pygame.gfxdraw.filled_circle(surface, *shape.parameters, shape.color)
 
         return surface

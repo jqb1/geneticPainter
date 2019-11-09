@@ -1,14 +1,16 @@
 import argparse
 import os
+from random import randint, sample
 
 import cv2
 import pygame
 
 from painting import Painting
-from random import randint
 
-POPULATION_SIZE = 20
-SHAPES_NUMBER = 50
+POPULATION_SIZE = 30
+SHAPES_NUMBER = 200
+
+import numpy as np
 
 
 def main():
@@ -28,6 +30,7 @@ def main():
         population = generate_new_population(population, reference_image)
         population_num += 1
         print(population_num, changes, best_image[0])
+
         if population[0][0] < best_image[0]:
             best_image = population[0]
             screen.blit(population[0][1], (0, 0))
@@ -40,41 +43,38 @@ def main():
                 pygame.display.quit()
 
 
-def generate_new_population(previous_population, reference_image):
-    def mutate_random_shapes(_painting):
-        for _ in range(randint(3, 10)):
-            selected_shape = _painting[2].shapes[randint(1, SHAPES_NUMBER - 2)]
-            selected_shape.rand_color()
-            selected_shape.mutate_vertices()
-        return _painting[2]
+def generate_new_population(population, reference_image):
+    for parent1, parent2 in list(zip(population[0::2], population[1::2]))[:POPULATION_SIZE // 6]:
+        population.append(crossover(parent1[2], parent2[2]))
 
-    new_population = []
-    child1, child2 = crossover(previous_population[0][2], previous_population[1][2])
-    mutation(child1)
-    mutation(child2)
-    new_population.extend([child1, child2])
+    new_individuals = population[POPULATION_SIZE:]
+    population[POPULATION_SIZE:] = [(0, 0, painting) for painting in new_individuals]
 
-    for painting in previous_population[2:POPULATION_SIZE]:
-        new_population.append(mutate_random_shapes(painting))
+    # select some pictures to mutate, mutate random parameter
+    for painting in sample(population[1:], POPULATION_SIZE//10):
+        mutation(painting[2])
 
-    images_with_fitneses = [(*fitness(reference_image, painting.draw()), painting) for painting in new_population]
-    return sorted(images_with_fitneses, key=lambda k: k[0])
+    # remove random addidtional individuals
+    for painting in sample(population[1:], len(new_individuals)):
+        population.remove(painting)
+
+    population = [(*fitness(reference_image, painting[2].draw()), painting[2])
+                  for painting in population]
+
+    return sorted(population, key=lambda k: k[0])
 
 
 def crossover(parent1, parent2):
-    child1 = Painting(SHAPES_NUMBER, parent1.width, parent1.height)
-    child2 = Painting(SHAPES_NUMBER, parent1.width, parent1.height)
-    child1.shapes = parent1.shapes[:SHAPES_NUMBER // 2] + parent2.shapes[SHAPES_NUMBER // 2:SHAPES_NUMBER]
-    child2.shapes = parent1.shapes[SHAPES_NUMBER // 2:SHAPES_NUMBER] + parent2.shapes[:SHAPES_NUMBER // 2]
-    return child1, child2
+    crossover_point = randint(1, SHAPES_NUMBER - 1)
+    child = Painting(SHAPES_NUMBER, parent1.width, parent1.height)
+    child.shapes = parent1.shapes[:crossover_point] + parent2.shapes[crossover_point:SHAPES_NUMBER]
+    return child
 
 
 def mutation(painting):
-    for _ in range(SHAPES_NUMBER // 20):
-        r = randint(1, len(painting.shapes) - 1)
-        shape_to_mutate = painting.shapes[r]
-        shape_to_mutate.mutate_vertices()
-        shape_to_mutate.rand_color()
+    for shape in painting.shapes:
+        # shape.mutate_vertices()
+        shape.rand_color()
 
 
 def generate_initial_population(width, height, image):
