@@ -9,14 +9,16 @@ class Painting:
         self.shapes_number = shapes_number
         self.width = width
         self.height = height
-        self.shapes = []
+        self.shapes = ()
 
     def create_init_shapes(self):
+        shapes = []
         for i in range(self.shapes_number):
             shape = Shape(self.width, self.height)
             shape.rand_color()
             shape.set_init_vertices()
-            self.shapes.append(shape)
+            shapes.append(shape)
+        self.shapes = tuple(shapes)
 
     def draw(self):
         surface = pygame.Surface((self.width, self.height))

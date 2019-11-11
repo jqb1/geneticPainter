@@ -1,6 +1,7 @@
 import argparse
 import os
-from random import randint, sample
+from copy import deepcopy
+from random import randint, sample, random
 
 import cv2
 import pygame
@@ -8,8 +9,7 @@ import pygame
 from painting import Painting
 
 POPULATION_SIZE = 30
-SHAPES_NUMBER = 200
-
+SHAPES_NUMBER = 150
 import numpy as np
 
 
@@ -24,18 +24,19 @@ def main():
     best_image = population[0]
     screen.blit(population[0][1], (0, 0))
     pygame.display.flip()
-
+    since_last = 0
     running = True
     while running:
         population = generate_new_population(population, reference_image)
         population_num += 1
         print(population_num, changes, best_image[0])
-
-        if population[0][0] < best_image[0]:
+        since_last += 1
+        if population[0][0] < best_image[0] or since_last > 10000:
             best_image = population[0]
             screen.blit(population[0][1], (0, 0))
             pygame.display.flip()
             changes += 1
+            since_last = 0
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -51,12 +52,12 @@ def generate_new_population(population, reference_image):
     population[POPULATION_SIZE:] = [(0, 0, painting) for painting in new_individuals]
 
     # select some pictures to mutate, mutate random parameter
-    for painting in sample(population[1:], POPULATION_SIZE//10):
+    for painting in sample(population[1:], POPULATION_SIZE//3):
         mutation(painting[2])
 
     # remove random addidtional individuals
-    for painting in sample(population[1:], len(new_individuals)):
-        population.remove(painting)
+    for individual in sample(population[1:], len(new_individuals)):
+        population.remove(individual)
 
     population = [(*fitness(reference_image, painting[2].draw()), painting[2])
                   for painting in population]
@@ -67,14 +68,16 @@ def generate_new_population(population, reference_image):
 def crossover(parent1, parent2):
     crossover_point = randint(1, SHAPES_NUMBER - 1)
     child = Painting(SHAPES_NUMBER, parent1.width, parent1.height)
-    child.shapes = parent1.shapes[:crossover_point] + parent2.shapes[crossover_point:SHAPES_NUMBER]
+    child.shapes = deepcopy(parent1.shapes[:crossover_point]) + deepcopy(parent2.shapes[crossover_point:SHAPES_NUMBER])
     return child
 
 
 def mutation(painting):
-    for shape in painting.shapes:
-        # shape.mutate_vertices()
-        shape.rand_color()
+    for shape in sample(painting.shapes, 1):
+        if random() > 0.5:
+            shape.mutate_vertices()
+        else:
+            shape.mutate_color()
 
 
 def generate_initial_population(width, height, image):
