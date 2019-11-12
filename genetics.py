@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 from copy import deepcopy
 from random import randint, sample, random
 
@@ -9,8 +10,7 @@ import pygame
 from painting import Painting
 
 POPULATION_SIZE = 30
-SHAPES_NUMBER = 150
-import numpy as np
+SHAPES_NUMBER = 300
 
 
 def main():
@@ -29,14 +29,12 @@ def main():
     while running:
         population = generate_new_population(population, reference_image)
         population_num += 1
-        print(population_num, changes, best_image[0])
-        since_last += 1
-        if population[0][0] < best_image[0] or since_last > 10000:
+        print(f'Population:{population_num}, changes so far:{changes}, fitness: {best_image[0]}')
+        if population[0][0] < best_image[0]:
             best_image = population[0]
             screen.blit(population[0][1], (0, 0))
             pygame.display.flip()
             changes += 1
-            since_last = 0
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -45,6 +43,7 @@ def main():
 
 
 def generate_new_population(population, reference_image):
+    # start = time.time()
     for parent1, parent2 in list(zip(population[0::2], population[1::2]))[:POPULATION_SIZE // 6]:
         population.append(crossover(parent1[2], parent2[2]))
 
@@ -55,13 +54,13 @@ def generate_new_population(population, reference_image):
     for painting in sample(population[1:], POPULATION_SIZE//3):
         mutation(painting[2])
 
-    # remove random addidtional individuals
+    # remove random additional individuals
     for individual in sample(population[1:], len(new_individuals)):
         population.remove(individual)
-
     population = [(*fitness(reference_image, painting[2].draw()), painting[2])
                   for painting in population]
-
+    # stop = time.time()
+    # print(stop - start)
     return sorted(population, key=lambda k: k[0])
 
 

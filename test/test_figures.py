@@ -1,4 +1,4 @@
-from figures import fitness
+from genetics import fitness
 import cv2
 import pygame
 
