@@ -1,16 +1,16 @@
 import argparse
 import os
 import time
+import asyncio
 from copy import deepcopy
 from random import randint, sample, random
-
 import cv2
 import pygame
 
 from painting import Painting
 
 POPULATION_SIZE = 30
-SHAPES_NUMBER = 300
+SHAPES_NUMBER = 150
 
 
 def main():
@@ -24,10 +24,11 @@ def main():
     best_image = population[0]
     screen.blit(population[0][1], (0, 0))
     pygame.display.flip()
-    since_last = 0
     running = True
     while running:
-        population = generate_new_population(population, reference_image)
+        event_loop = asyncio.get_event_loop()
+        asyncio.set_event_loop(event_loop)
+        population = event_loop.run_until_complete(generate_new_population(population, reference_image))
         population_num += 1
         print(f'Population:{population_num}, changes so far:{changes}, fitness: {best_image[0]}')
         if population[0][0] < best_image[0]:
@@ -42,7 +43,7 @@ def main():
                 pygame.display.quit()
 
 
-def generate_new_population(population, reference_image):
+async def generate_new_population(population, reference_image):
     # start = time.time()
     for parent1, parent2 in list(zip(population[0::2], population[1::2]))[:POPULATION_SIZE // 6]:
         population.append(crossover(parent1[2], parent2[2]))
@@ -57,8 +58,12 @@ def generate_new_population(population, reference_image):
     # remove random additional individuals
     for individual in sample(population[1:], len(new_individuals)):
         population.remove(individual)
-    population = [(*fitness(reference_image, painting[2].draw()), painting[2])
-                  for painting in population]
+
+    async def pop_gen():
+        for ind in population:
+            yield ind[2]
+
+    population = [await fitness(reference_image, individual) async for individual in pop_gen()]
     # stop = time.time()
     # print(stop - start)
     return sorted(population, key=lambda k: k[0])
@@ -86,16 +91,17 @@ def generate_initial_population(width, height, image):
         painting.create_init_shapes()
         paintings.append(painting)
 
-    images_with_fitneses = [(*fitness(image, painting.draw()), painting) for painting in paintings]
+    images_with_fitneses = [(99999999999999, painting.draw(), painting) for painting in paintings]
     return sorted(images_with_fitneses, key=lambda k: k[0])
 
 
-def fitness(image, painting_surface) -> tuple:
+async def fitness(image, painting) -> tuple:
     # transpose from (width, height) to (height, width) and change from RGB to BGR
+    painting_surface = painting.draw()
     painting_array = pygame.surfarray.array3d(painting_surface).transpose([1, 0, 2])
     paiting_image = cv2.cvtColor(painting_array, cv2.COLOR_RGB2BGR)
     diff = cv2.absdiff(paiting_image, image).sum()
-    return diff, painting_surface
+    return diff, painting_surface, painting
 
 
 def read_image():
