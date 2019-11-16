@@ -9,99 +9,99 @@ import pygame
 
 from painting import Painting
 
-POPULATION_SIZE = 30
-SHAPES_NUMBER = 150
 
+class GeneticsController:
 
-def main():
-    reference_image = read_image()
-    height, width = reference_image.shape[:2]
-    screen = pygame.display.set_mode([width, height])
-    population_num = 0
-    changes = 0
+    def __init__(self, reference_image, population_size, shapes_number):
+        self.population_size = population_size if population_size else 30
+        self.shapes_number = shapes_number if shapes_number else 150
+        self.reference_image = reference_image
 
-    population = generate_initial_population(width, height, reference_image)
-    best_image = population[0]
-    screen.blit(population[0][1], (0, 0))
-    pygame.display.flip()
-    running = True
-    while running:
-        event_loop = asyncio.get_event_loop()
-        asyncio.set_event_loop(event_loop)
-        population = event_loop.run_until_complete(generate_new_population(population, reference_image))
-        population_num += 1
-        print(f'Population:{population_num}, changes so far:{changes}, fitness: {best_image[0]}')
-        if population[0][0] < best_image[0]:
-            best_image = population[0]
-            screen.blit(population[0][1], (0, 0))
-            pygame.display.flip()
-            changes += 1
+    def start_genetics(self,):
+        height, width = self.reference_image.shape[:2]
+        screen = pygame.display.set_mode([width, height])
+        population_num = 0
+        changes = 0
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-                pygame.display.quit()
+        population = self.generate_initial_population(width, height)
+        best_image = population[0]
+        screen.blit(population[0][1], (0, 0))
+        pygame.display.flip()
+        running = True
+        while running:
+            event_loop = asyncio.get_event_loop()
+            asyncio.set_event_loop(event_loop)
+            population = event_loop.run_until_complete(self.generate_new_population(population))
+            population_num += 1
+            print(f'Population:{population_num}, changes so far:{changes}, fitness: {best_image[0]}')
+            if population[0][0] < best_image[0]:
+                best_image = population[0]
+                screen.blit(population[0][1], (0, 0))
+                pygame.display.flip()
+                changes += 1
 
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    pygame.display.quit()
 
-async def generate_new_population(population, reference_image):
-    # start = time.time()
-    for parent1, parent2 in list(zip(population[0::2], population[1::2]))[:POPULATION_SIZE // 6]:
-        population.append(crossover(parent1[2], parent2[2]))
+    async def generate_new_population(self, population):
+        # start = time.time()
+        for parent1, parent2 in list(zip(population[0::2], population[1::2]))[:self.population_size // 6]:
+            population.append(self.crossover(parent1[2], parent2[2]))
 
-    new_individuals = population[POPULATION_SIZE:]
-    population[POPULATION_SIZE:] = [(0, 0, painting) for painting in new_individuals]
+        new_individuals = population[self.population_size:]
+        population[self.population_size:] = [(0, 0, painting) for painting in new_individuals]
 
-    # select some pictures to mutate, mutate random parameter
-    for painting in sample(population[1:], POPULATION_SIZE//3):
-        mutation(painting[2])
+        # select some pictures to mutate, mutate random parameter
+        for painting in sample(population[1:], self.population_size // 3):
+            self.mutation(painting[2])
 
-    # remove random additional individuals
-    for individual in sample(population[1:], len(new_individuals)):
-        population.remove(individual)
+        # remove random additional individuals
+        for individual in sample(population[1:], len(new_individuals)):
+            population.remove(individual)
 
-    async def pop_gen():
-        for ind in population:
-            yield ind[2]
+        async def pop_gen():
+            for ind in population:
+                yield ind[2]
 
-    population = [await fitness(reference_image, individual) async for individual in pop_gen()]
-    # stop = time.time()
-    # print(stop - start)
-    return sorted(population, key=lambda k: k[0])
+        population = [await self.fitness(self.reference_image, individual) async for individual in pop_gen()]
+        # stop = time.time()
+        # print(stop - start)
+        return sorted(population, key=lambda k: k[0])
 
+    def crossover(self, parent1, parent2):
+        crossover_point = randint(1, self.shapes_number - 1)
+        child = Painting(self.shapes_number, parent1.width, parent1.height)
+        child.shapes = deepcopy(parent1.shapes[:crossover_point]) + deepcopy(
+            parent2.shapes[crossover_point:self.shapes_number])
+        return child
 
-def crossover(parent1, parent2):
-    crossover_point = randint(1, SHAPES_NUMBER - 1)
-    child = Painting(SHAPES_NUMBER, parent1.width, parent1.height)
-    child.shapes = deepcopy(parent1.shapes[:crossover_point]) + deepcopy(parent2.shapes[crossover_point:SHAPES_NUMBER])
-    return child
+    def mutation(self, painting):
+        for shape in sample(painting.shapes, 1):
+            if random() > 0.5:
+                shape.mutate_vertices()
+            else:
+                shape.mutate_color()
 
+    def generate_initial_population(self, width, height):
+        paintings = []
+        for _ in range(self.population_size):
+            painting = Painting(self.shapes_number, width, height)
+            painting.create_init_shapes()
+            paintings.append(painting)
 
-def mutation(painting):
-    for shape in sample(painting.shapes, 1):
-        if random() > 0.5:
-            shape.mutate_vertices()
-        else:
-            shape.mutate_color()
+        images_with_fitneses = [(99999999999999, painting.draw(), painting) for painting in paintings]
+        return sorted(images_with_fitneses, key=lambda k: k[0])
 
-
-def generate_initial_population(width, height, image):
-    paintings = []
-    for _ in range(POPULATION_SIZE):
-        painting = Painting(SHAPES_NUMBER, width, height)
-        painting.create_init_shapes()
-        paintings.append(painting)
-
-    images_with_fitneses = [(99999999999999, painting.draw(), painting) for painting in paintings]
-    return sorted(images_with_fitneses, key=lambda k: k[0])
-
-
-async def fitness(image, painting) -> tuple:
-    # transpose from (width, height) to (height, width) and change from RGB to BGR
-    painting_surface = painting.draw()
-    painting_array = pygame.surfarray.array3d(painting_surface).transpose([1, 0, 2])
-    paiting_image = cv2.cvtColor(painting_array, cv2.COLOR_RGB2BGR)
-    diff = cv2.absdiff(paiting_image, image).sum()
-    return diff, painting_surface, painting
+    @staticmethod
+    async def fitness(image, painting) -> tuple:
+        # transpose from (width, height) to (height, width) and change from RGB to BGR
+        painting_surface = painting.draw()
+        painting_array = pygame.surfarray.array3d(painting_surface).transpose([1, 0, 2])
+        paiting_image = cv2.cvtColor(painting_array, cv2.COLOR_RGB2BGR)
+        diff = cv2.absdiff(paiting_image, image).sum()
+        return diff, painting_surface, painting
 
 
 def read_image():
@@ -114,10 +114,17 @@ def read_image():
     parser.add_argument('-f', dest="file_path", required=True, type=file_type,
                         help="input image file path")
 
-    image_path = parser.parse_args().file_path
-    img = cv2.imread(image_path)
-    return img
+    parser.add_argument('-p', dest="size_of_population", required=False, type=int,
+                        help="population size")
+
+    parser.add_argument('-s', dest="numer_of_shapes", required=False, type=int,
+                        help="number of shapes")
+    args = parser.parse_args()
+
+    img = cv2.imread(args.file_path)
+    genetics_controller = GeneticsController(img, args.size_of_population, args.numer_of_shapes)
+    genetics_controller.start_genetics()
 
 
 if __name__ == "__main__":
-    main()
+    read_image()
