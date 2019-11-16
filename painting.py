@@ -1,7 +1,7 @@
 import pygame
 import pygame.gfxdraw
 
-from shape import Shape
+from triangle import Triangle
 
 
 class Painting:
@@ -14,7 +14,7 @@ class Painting:
     def create_init_shapes(self):
         shapes = []
         for i in range(self.shapes_number):
-            shape = Shape(self.width, self.height)
+            shape = Triangle(self.width, self.height)
             shape.rand_color()
             shape.set_init_vertices()
             shapes.append(shape)
@@ -23,6 +23,9 @@ class Painting:
     def draw(self):
         surface = pygame.Surface((self.width, self.height))
         for shape in self.shapes:
-            pygame.gfxdraw.filled_circle(surface, *shape.parameters, shape.color)
+            if isinstance(shape, Triangle):
+                pygame.gfxdraw.filled_polygon(surface, shape.parameters, shape.color)
+            else:
+                pygame.gfxdraw.filled_circle(surface, *shape.parameters, shape.color)
 
         return surface
