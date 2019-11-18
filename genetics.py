@@ -12,10 +12,16 @@ from painting import Painting
 
 class GeneticsController:
 
-    def __init__(self, reference_image, population_size, shapes_number):
+    def __init__(self, reference_image, population_size, shapes_number, triangles):
         self.population_size = population_size if population_size else 30
-        self.shapes_number = shapes_number if shapes_number else 150
+        if shapes_number:
+            self.shapes_number = shapes_number
+        elif triangles:
+            self.shapes_number = 50
+        else:
+            self.shapes_number = 150
         self.reference_image = reference_image
+        self.draw_triangles = triangles
 
     def start_genetics(self,):
         height, width = self.reference_image.shape[:2]
@@ -88,7 +94,7 @@ class GeneticsController:
         paintings = []
         for _ in range(self.population_size):
             painting = Painting(self.shapes_number, width, height)
-            painting.create_init_shapes()
+            painting.create_init_shapes(self.draw_triangles)
             paintings.append(painting)
 
         images_with_fitneses = [(99999999999999, painting.draw(), painting) for painting in paintings]
@@ -111,18 +117,21 @@ def read_image():
         return file_path
 
     parser = argparse.ArgumentParser('Process image')
-    parser.add_argument('-f', dest="file_path", required=True, type=file_type,
+    parser.add_argument('-f', dest='file_path', required=True, type=file_type,
                         help="input image file path")
 
-    parser.add_argument('-p', dest="size_of_population", required=False, type=int,
+    parser.add_argument('-p', dest='size_of_population', required=False, type=int,
                         help="population size")
 
-    parser.add_argument('-s', dest="numer_of_shapes", required=False, type=int,
-                        help="number of shapes")
+    parser.add_argument('-s', dest='numer_of_shapes', required=False, type=int,
+                        help='number of shapes')
+
+    parser.add_argument('-t', action='store_true', required=False, help='Draw with triangles')
+
     args = parser.parse_args()
 
     img = cv2.imread(args.file_path)
-    genetics_controller = GeneticsController(img, args.size_of_population, args.numer_of_shapes)
+    genetics_controller = GeneticsController(img, args.size_of_population, args.numer_of_shapes, args.t)
     genetics_controller.start_genetics()
 
 

@@ -1,6 +1,7 @@
 import pygame
 import pygame.gfxdraw
 
+from circle import Circle
 from triangle import Triangle
 
 
@@ -11,10 +12,13 @@ class Painting:
         self.height = height
         self.shapes = ()
 
-    def create_init_shapes(self):
+    def create_init_shapes(self, draw_triangles):
         shapes = []
         for i in range(self.shapes_number):
-            shape = Triangle(self.width, self.height)
+            if draw_triangles:
+                shape = Triangle(self.width, self.height)
+            else:
+                shape = Circle(self.width, self.height)
             shape.rand_color()
             shape.set_init_vertices()
             shapes.append(shape)
