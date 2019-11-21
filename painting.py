@@ -12,7 +12,7 @@ class Painting:
         self.height = height
         self.shapes = ()
 
-    def create_init_shapes(self, draw_triangles):
+    def create_init_shapes(self, draw_triangles: bool):
         shapes = []
         for i in range(self.shapes_number):
             if draw_triangles:
@@ -24,7 +24,7 @@ class Painting:
             shapes.append(shape)
         self.shapes = tuple(shapes)
 
-    def draw(self):
+    def draw(self) -> pygame.Surface:
         surface = pygame.Surface((self.width, self.height))
         for shape in self.shapes:
             if isinstance(shape, Triangle):
