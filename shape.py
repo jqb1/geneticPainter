@@ -10,25 +10,15 @@ class Shape:
         self.parameters = []
         self.color = ()
 
-    def set_init_vertices(self) -> None:
-        pass
-
     def rand_color(self) -> None:
         # RGB, alpha
         self.color = randint(1, 255), randint(1, 255), randint(1, 255), randint(1, 180)
 
     def mutate_color(self):
-        if random() > 0.5:
-            new_color = [color + randint(0, int(255 * self.mutation_strength)) for color in self.color[:-1]]
-            new_color.append(self.color[-1])
-            self.color = tuple(new_color)
-        else:
-            new_color = [color - randint(0, int(255 * self.mutation_strength)) for color in self.color[:-1]]
-            new_color.append(self.color[-1])
-            self.color = tuple(new_color)
+        new_color = [color + randint(-int(255 * self.mutation_strength), int(255 * self.mutation_strength))
+                     for color in self.color[:-1]]
+        new_color.append(self.color[-1])
+        self.color = tuple(new_color)
 
         if any(color > 255 or color < 0 for color in self.color[:-1]):
             self.rand_color()
-
-    def mutate_vertices(self):
-        pass
