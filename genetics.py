@@ -6,6 +6,7 @@ from copy import deepcopy
 from random import randint, sample, random
 import cv2
 import pygame
+import csv
 
 from painting import Painting
 
@@ -55,7 +56,7 @@ class GeneticsController:
                     pygame.display.quit()
 
     async def generate_new_population(self, population: list):
-        # start = time.time()
+
         for parent1, parent2 in list(zip(population[0::2], population[1::2]))[:self.population_size // 6]:
             population.append(self.crossover(parent1[2], parent2[2]))
 
@@ -70,11 +71,12 @@ class GeneticsController:
         for individual in sample(population[1:], len(new_individuals)):
             population.remove(individual)
 
-        async def pop_gen():
+        async def pop_generator():
             for ind in population:
                 yield ind[2]
 
-        population = [await self.fitness(self.reference_image, individual) async for individual in pop_gen()]
+        # start = time.time()
+        population = [await self.fitness(self.reference_image, individual) async for individual in pop_generator()]
         # stop = time.time()
         # print(stop - start)
         return sorted(population, key=lambda k: k[0])
@@ -107,7 +109,7 @@ class GeneticsController:
     async def fitness(image, painting: Painting) -> tuple:
         # transpose from (width, height) to (height, width) and change from RGB to BGR
         painting_surface = painting.draw()
-        painting_array = pygame.surfarray.array3d(painting_surface).transpose([1, 0, 2])
+        painting_array = pygame.surfarray.pixels3d(painting_surface).transpose([1, 0, 2])
         paiting_image = cv2.cvtColor(painting_array, cv2.COLOR_RGB2BGR)
         diff = cv2.absdiff(paiting_image, image).sum()
         return diff, painting_surface, painting

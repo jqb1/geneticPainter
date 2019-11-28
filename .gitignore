@@ -2,3 +2,5 @@ venv/
 test_images/
 .idea/
 __pycache__/
+*.jpg
+*.png
