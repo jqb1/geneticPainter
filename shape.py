@@ -2,7 +2,7 @@ from random import randint, random
 
 
 class Shape:
-    mutation_strength = 0.4
+    mutation_strength = 0.2
 
     def __init__(self, screen_width, screen_height):
         self.screen_width = screen_width

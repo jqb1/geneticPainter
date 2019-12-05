@@ -75,10 +75,14 @@ class GeneticsController:
             for ind in population:
                 yield ind[2]
 
-        # start = time.time()
+        start = time.time()
         population = [await self.fitness(self.reference_image, individual) async for individual in pop_generator()]
-        # stop = time.time()
-        # print(stop - start)
+        stop = time.time()
+        with open('../time_results.csv', mode='a') as csv_file:
+            writer = csv.writer(csv_file)
+            shape = 'triangles' if self.draw_triangles else 'circles'
+            writer.writerow([self.shapes_number, population[0][0], stop - start])
+        print(stop - start)
         return sorted(population, key=lambda k: k[0])
 
     def crossover(self, parent1: Painting, parent2: Painting):
