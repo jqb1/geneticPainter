@@ -1,12 +1,10 @@
 import argparse
 import os
-import time
 import asyncio
 from copy import deepcopy
 from random import randint, sample, random
 import cv2
 import pygame
-import csv
 
 from painting import Painting
 
@@ -75,14 +73,7 @@ class GeneticsController:
             for ind in population:
                 yield ind[2]
 
-        start = time.time()
         population = [await self.fitness(self.reference_image, individual) async for individual in pop_generator()]
-        stop = time.time()
-        with open('../time_results.csv', mode='a') as csv_file:
-            writer = csv.writer(csv_file)
-            shape = 'triangles' if self.draw_triangles else 'circles'
-            writer.writerow([self.shapes_number, population[0][0], stop - start])
-        print(stop - start)
         return sorted(population, key=lambda k: k[0])
 
     def crossover(self, parent1: Painting, parent2: Painting):
@@ -92,7 +83,8 @@ class GeneticsController:
             parent2.shapes[crossover_point:self.shapes_number])
         return child
 
-    def mutation(self, painting: Painting):
+    @staticmethod
+    def mutation(painting: Painting):
         for shape in sample(painting.shapes, 1):
             if random() > 0.5:
                 shape.mutate_vertices()
